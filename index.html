@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Operator Brief Builder — turn a job into a ready-to-paste AI operator</title>
+<meta name="description" content="Free tool: describe a repetitive task and get a ready-to-paste Claude operator — identity, onboarding, process, guardrails. No login, nothing stored, all in your browser." />
+<style>
+  :root{
+    --bg:#0F0017; --panel:#190826; --line:#2c1740; --ink:#ECE6F5; --muted:#A793C6;
+    --violet:#6D5CFF; --magenta:#C21AA0; --gold:#F5C542;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:radial-gradient(1200px 600px at 70% -10%, #25103b 0%, var(--bg) 55%);
+    color:var(--ink);font:16px/1.55 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif;}
+  .wrap{max-width:880px;margin:0 auto;padding:40px 20px 80px}
+  h1{font-size:clamp(26px,4vw,40px);margin:0 0 6px;letter-spacing:-.02em}
+  h1 .g{color:var(--gold)}
+  .sub{color:var(--muted);margin:0 0 28px;max-width:62ch}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:18px}
+  label{display:block;font-weight:600;margin:14px 0 6px}
+  label .hint{font-weight:400;color:var(--muted);font-size:13px}
+  input,textarea,select{width:100%;background:#120420;border:1px solid var(--line);color:var(--ink);
+    border-radius:10px;padding:11px 12px;font:inherit;outline:none}
+  input:focus,textarea:focus,select:focus{border-color:var(--violet)}
+  textarea{min-height:78px;resize:vertical}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:620px){.row{grid-template-columns:1fr}}
+  button{cursor:pointer;border:0;border-radius:11px;font:inherit;font-weight:700}
+  .build{background:linear-gradient(90deg,var(--violet),var(--magenta));color:#fff;padding:14px 22px;font-size:17px;margin-top:20px;width:100%}
+  .build:hover{filter:brightness(1.08)}
+  .out{position:relative}
+  pre{white-space:pre-wrap;word-break:break-word;background:#0c0418;border:1px solid var(--line);
+    border-radius:12px;padding:18px;max-height:460px;overflow:auto;font:13.5px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace;color:#dcd2f0}
+  .copy{position:absolute;top:12px;right:12px;background:#26113a;border:1px solid var(--line);color:var(--ink);padding:7px 12px;font-size:13px}
+  .copy:hover{border-color:var(--violet)}
+  .copied{color:var(--gold)}
+  .how{color:var(--muted);font-size:14px;margin-top:10px}
+  footer{margin-top:40px;color:var(--muted);font-size:13px;border-top:1px solid var(--line);padding-top:18px}
+  footer a{color:var(--violet);text-decoration:none}
+  .hidden{display:none}
+  .tag{display:inline-block;font-size:12px;color:var(--gold);border:1px solid var(--line);border-radius:999px;padding:3px 10px;margin-bottom:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="tag">free · nothing stored · runs entirely in your browser</span>
+  <h1>The Operator Brief <span class="g">Builder</span></h1>
+  <p class="sub">Most people use AI like a vending machine — one question, one answer. An <em>operator</em> is different: a small AI you set up once that already knows your job. Describe a task you keep repeating, and this builds you a ready-to-paste operator for Claude (or any chat AI). No account, no catch.</p>
+
+  <div class="card">
+    <label>Your role <span class="hint">— e.g. "freelance photographer", "clinic office manager", "B2B founder"</span></label>
+    <input id="role" placeholder="what you do" />
+
+    <label>Who it serves <span class="hint">— you, your clients, your team?</span></label>
+    <input id="audience" placeholder="e.g. my coaching clients" />
+
+    <label>The repetitive task you want it to own <span class="hint">— the thing that eats your time</span></label>
+    <textarea id="task" placeholder="e.g. turning messy call notes into a clean follow-up email and a 3-bullet summary"></textarea>
+
+    <div class="row">
+      <div>
+        <label>Tone</label>
+        <select id="tone">
+          <option>warm and plain</option>
+          <option>sharp and direct</option>
+          <option>calm and precise</option>
+          <option>playful but useful</option>
+        </select>
+      </div>
+      <div>
+        <label>One thing it must NEVER do <span class="hint">optional</span></label>
+        <input id="never" placeholder="e.g. promise a delivery date" />
+      </div>
+    </div>
+
+    <button class="build" onclick="build()">Build my operator ↓</button>
+  </div>
+
+  <div id="result" class="card out hidden">
+    <button class="copy" onclick="copyOut()" id="copyBtn">Copy</button>
+    <pre id="output"></pre>
+    <p class="how"><strong>How to use it:</strong> open Claude (claude.ai) → start a new Project (or just a chat) → paste this in as the instructions. The first time, it'll onboard you with a few questions, then it's yours.</p>
+  </div>
+
+  <footer>
+    Built by <a href="https://x.com/ProGenieAI" target="_blank" rel="noopener">ProGenie</a> — an AI that runs a company in public. This tool is free and leaves nothing behind; it generates text in your browser and sends nothing anywhere.
+  </footer>
+</div>
+
+<script>
+function esc(s){return (s||'').trim();}
+function cap(s){s=esc(s);return s? s.charAt(0).toUpperCase()+s.slice(1):s;}
+function build(){
+  var role=esc(document.getElementById('role').value)||'a busy professional';
+  var aud=esc(document.getElementById('audience').value)||'the people you work with';
+  var task=esc(document.getElementById('task').value)||'the recurring work you keep redoing by hand';
+  var tone=document.getElementById('tone').value;
+  var never=esc(document.getElementById('never').value);
+  var neverLine = never ? ('\n- Never '+never.replace(/^never\s+/i,'')+'.') : '';
+
+  var out =
+"You are an AI operator built for "+role+". You are not a generic chatbot — you carry practical, hands-on judgment about one job: "+task+", for "+aud+". You exist to save time and produce work worth sending.\n\n"+
+"VOICE\n"+
+"- "+cap(tone)+". Plain and specific. No filler, no hype. You'd rather ask one good question than guess.\n"+
+"- You're honest about what you don't know, and you never invent facts or numbers.\n\n"+
+"FIRST MESSAGE — ALWAYS ONBOARD FIRST (first time only)\n"+
+"Don't start the task yet. Introduce yourself warmly in two lines, then ask, in ONE short grouped message:\n"+
+"  1. What does a great version of this look like to you? (an example helps)\n"+
+"  2. Who's it for, and what tone fits them?\n"+
+"  3. Anything I should always include — or always avoid?\n"+
+"End with: \"Answer what you can, skip the rest — I'll adapt.\"\n\n"+
+"HOW YOU WORK (every time after onboarding)\n"+
+"1. Restate the specific goal in one line before producing anything, so we're aligned.\n"+
+"2. Do the task — "+task+" — to a high bar. Show your reasoning briefly so I can trust it.\n"+
+"3. Offer the single best next step at the end. Don't wait to be asked.\n\n"+
+"GUARDRAILS\n"+
+"- Never make a binding promise or commit me to something on my behalf.\n"+
+"- If a request needs info you don't have, ask — don't fill the gap with a guess."+neverLine+"\n\n"+
+"Remember: I'd rather have one sharp, finished thing than five rough ones. Quality over volume.";
+
+  document.getElementById('output').textContent = out;
+  document.getElementById('result').classList.remove('hidden');
+  document.getElementById('result').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function copyOut(){
+  var t=document.getElementById('output').textContent;
+  navigator.clipboard.writeText(t).then(function(){
+    var b=document.getElementById('copyBtn');b.textContent='Copied ✓';b.classList.add('copied');
+    setTimeout(function(){b.textContent='Copy';b.classList.remove('copied');},1800);
+  });
+}
+</script>
+</body>
+</html>
