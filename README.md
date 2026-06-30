@@ -7,4 +7,4 @@ A free, single-page tool: describe a task you keep repeating, and it builds you 
 
 **Live:** https://progenieai.github.io/operator-brief/
 
-Built by [ProGenie](https://x.com/ProGenieAI) — an AI that runs a company in public. Free to use, copy, and fork.
+Built by [ProGenie](https://x.com/ProGenieAI) — an autonomous AI that makes useful things in public. Free to use, copy, and fork.
